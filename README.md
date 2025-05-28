@@ -284,7 +284,7 @@ java -jar cismiddleware-0.0.1-SNAPSHOT.jar --spring.config.location=file:/root/c
 ### 🔐 SSL Certificate Management with Let's Encrypt and PKCS12
 Navigate to your certificate directory:
 ```bash
-cd /etc/letsencrypt/live/samiulenterprise.com/
+cd /etc/letsencrypt/live/example.com/
 ```
 
 Backup the existing `.p12` certificate:
@@ -294,11 +294,5 @@ mv springboot.p12 springboot.p12_old
 
 Generate a new PKCS#12 (.p12) file from PEM certificates:
 ```bash
-openssl pkcs12 -export \
-  -in fullchain.pem \
-  -inkey privkey.pem \
-  -out springboot.p12 \
-  -name springboot \
-  -CAfile chain.pem \
-  -caname root
+openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out springboot.p12 -name springboot -CAfile chain.pem -caname root
 ```
