@@ -255,6 +255,13 @@ git checkout br1
 git clone git@github.com-account1:shariful-w3/microservices-config.git
 git clone git@gitlab.com-account2:shaarifulz/portableportal.git
 ```
+---
+### 🔗 Set Remote Repository Using SSH Config
+
+Step 3: Add or update remote repo using your SSH configurations:
+```bash
+git remote set-url origin git@github.com-account1:shariful-w3/DevOps1Jenkins.git
+```
 
 ---
 
