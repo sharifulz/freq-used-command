@@ -145,6 +145,10 @@ Host gitlab.com-account2
 chmod 600 ~/.ssh/config
 ```
 
+```bash
+ssh -T git@github.com
+```
+
 ### Step 4: Clone Using Custom Host
 
 ```bash
