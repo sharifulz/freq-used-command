@@ -251,6 +251,28 @@ git config --global init.defaultBranch main
 git checkout br1
 ```
 
+# 🔄 Resetting `dev` Branch to a Specific Commit
+
+This guide explains how to reset the `dev` branch to commit `d02ab9f` and force-push the changes.
+
+## Commands
+
+```bash
+# Move to the commit
+git checkout d02ab9f
+
+# (Optional) Create a temporary branch if you want to preserve a pointer
+git checkout -b temp-reset
+
+# Return to dev
+git checkout dev
+
+# Reset dev to the old commit
+git reset --hard d02ab9f
+
+# Push with force to remote
+git push origin dev --force
+
 ---
 
 ## 📂 Sample Repositories Cloned Using SSH
