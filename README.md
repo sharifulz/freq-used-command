@@ -46,6 +46,15 @@ Add the following line to run every day at 10:00 PM:
 0 22 * * * /opt/script/mysqlbackupscript.sh >> /var/log/mysqlbackup.log 2>&1
 ```
 
+Here’s what each field means:
+
+| Field         | Value  | Meaning                              |
+|---------------|--------|--------------------------------------|
+| Minute        | `0`    | At 0 minutes                         |
+| Hour          | `22`   | At 10 PM (24-hour format)            |
+| Day of Month  | `*`    | Every day of the month               |
+| Month         | `*`    | Every month                          |
+| Day of Week   | `*`    | Every day of the week                |
 ---
 
 ## 📝 Step 3: View Current Cron Jobs
