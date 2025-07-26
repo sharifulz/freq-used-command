@@ -1,305 +1,114 @@
 
-# Git Master Guide 🚀
+# 🛡️ MySQL Backup Script with SMS Notification
 
-This documentation covers essential Git workflows, configurations (PAT & SSH), and advanced usage tips including hooks and multi-account SSH setups.
-
----
-
-## 📁 Git Concepts & Workflow
-
-### Git Directory Structure
-- **Working Directory**: Your local files.
-- **Staging Area (Index)**: Files prepared for the next commit.
-- **Commit History**: Saved snapshots of your work.
-- **Stash**: Temporary store of changes.
-- **Remote**: Central repo (like GitHub/GitLab).
+This guide documents how to use and schedule a MySQL backup script with SMS notification using a cron job on a Linux server.
 
 ---
 
-## 🚀 Basic Git Workflow
+## 📂 Script Location
 
-### Step 1: Initialize & Setup Branches
-
-```bash
-git init
-git branch br1
-git branch br2
-git checkout br1
+Your backup script is located at:
+```
+/opt/script/mysqlbackupscript.sh
 ```
 
-### Step 2: Work on `br1`
-
+Ensure it's executable:
 ```bash
-echo "Hello from br1" > file.txt
-git add file.txt
-git commit -m "br1: first commit"
-# Repeat commit steps 3x
-```
-
-### Step 3: Work on `br2`
-
-```bash
-git checkout br2
-echo "Hello from br2" > file.txt
-git add file.txt
-git commit -m "br2: first commit"
-# Repeat commit steps 3x
-```
-
-### Step 4: Merge Branch to Main
-
-```bash
-git checkout main
-git merge br1
-```
-
-### Step 5: Cherry-pick Specific Commit
-
-```bash
-git cherry-pick <commit-hash>
+chmod +x /opt/script/mysqlbackupscript.sh
 ```
 
 ---
 
-## 🔁 Advanced Commands
+## 🧪 Step 1: Run the Script Manually (Test)
 
-### Rebase
-
+Run manually to test:
 ```bash
-git rebase main
-# Makes commit history linear
+bash /opt/script/mysqlbackupscript.sh
 ```
 
-### Revert (safe for public branches)
+Check for:
+- The backup file inside `/opt/db_backup`
+- SMS message (Success or Failure)
+- Logs in `/tmp/backup_error.log` (only if there’s an error)
 
+---
+
+## 🕰️ Step 2: Schedule with Cron
+
+Edit crontab:
 ```bash
-git revert <commit-hash>
+crontab -e
 ```
 
-### Reset (dangerous, modifies history)
+Add the following line to run every day at 10:00 PM:
 
-```bash
-git reset --soft HEAD~1   # Keep staged
-git reset --mixed HEAD~1  # Keep unstaged
-git reset --hard HEAD~1   # Discard all
+```
+0 22 * * * /opt/script/mysqlbackupscript.sh >> /var/log/mysqlbackup.log 2>&1
 ```
 
 ---
 
-## 🌐 Remote Repos
+## 📝 Step 3: View Current Cron Jobs
 
-### Set up Remote
-
+To list all cron jobs for current user:
 ```bash
-git remote add origin git@github.com-account1:username/repo.git
-git push -u origin main
-```
-
-### View Logs
-
-```bash
-git log --all --oneline
+crontab -l
 ```
 
 ---
 
-## 🔑 SSH-Based Git Setup (Multi-Account)
+## 🐾 Step 4: View Cron File Contents
 
-### Step 1: Generate SSH Keys
-
+To view cron jobs (raw file):
 ```bash
-ssh-keygen -t rsa -b 4096 -C "email@example.com" -f ~/.ssh/id_rsa_account1
+cat /var/spool/cron/crontabs/$(whoami)
 ```
 
-Repeat for each GitHub/GitLab account.
+> Note: May require `sudo` on some systems.
 
-### Step 2: Start SSH Agent
+---
 
+## 🔍 Step 5: Check Cron Service Status
+
+For Ubuntu/Debian:
 ```bash
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_rsa_account1
+systemctl status cron
 ```
 
-### Step 3: Configure SSH
-
-Edit `~/.ssh/config`:
-
-```
-# GitHub Account 1
-Host github.com-account1
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/id_rsa_account1
-  IdentitiesOnly yes
-
-# GitLab Account 2
-Host gitlab.com-account2
-  HostName gitlab.com
-  User git
-  IdentityFile ~/.ssh/id_rsa_account2
-  IdentitiesOnly yes
-```
-
-> 💡 Don’t forget:
+To start/enable if not running:
 ```bash
-chmod 600 ~/.ssh/config
-```
-
-### Step 4: Clone Using Custom Host
-
-```bash
-git clone git@github.com-account1:username/repo.git
-git clone git@gitlab.com-account2:username/repo.git
+sudo systemctl start cron
+sudo systemctl enable cron
 ```
 
 ---
 
-## 📤 Push Local Repo to Remote
+## 🚫 Step 6: Disable or Remove Cron Job
 
+### Temporarily comment the line:
+Edit via:
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin git@github.com-account1:username/repo.git
-git push -u origin main
+crontab -e
 ```
+
+Add `#` in front of the line to disable.
+
+### Or completely remove all cron jobs:
+```bash
+crontab -r
+```
+
+⚠️ **This removes all cron jobs for the current user.**
 
 ---
 
-## ✅ Git Hooks
+## 💡 Tips
 
-### 🔍 Pre-commit Hook: Block `System.out.println`
-
-1. Create the hook:
-```bash
-touch .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-2. Script content:
-
-```bash
-#!/bin/bash
-
-echo "🔍 Running pre-commit checks..."
-
-files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.java$')
-
-for file in $files; do
-  if grep -q "System.out.println" "$file"; then
-    echo "🚫 Error: 'System.out.println' found in $file"
-    exit 1
-  fi
-done
-
-echo "✅ Pre-commit checks passed."
-exit 0
-```
-
-### 🔒 Additional Pre-commit Validations
-
-#### a. Block TODO/FIXME
-
-```bash
-grep -rnw 'src/' -e 'TODO\|FIXME' && echo "Remove TODOs before commit!" && exit 1
-```
-
-#### b. Prevent Large Files (>5MB)
-
-```bash
-find . -size +5M | grep -q . && echo "Too large files found!" && exit 1
-```
+- Always use absolute paths in scripts.
+- Ensure MySQL credentials are correct.
+- Monitor `/var/log/mysqlbackup.log` for job logs.
+- Confirm SMS API credits/limits for reliable notification.
 
 ---
 
-### 📜 Commit-msg Hook: Enforce Format
-
-1. Create `.git/hooks/commit-msg`
-
-```bash
-touch .git/hooks/commit-msg
-chmod +x .git/hooks/commit-msg
-```
-
-2. Add script:
-
-```bash
-#!/bin/bash
-
-pattern="^(feat|fix|docs|style|refactor|test|chore)\([a-z]+\): .{10,}$"
-if ! grep -qE "$pattern" "$1"; then
-  echo "❌ Commit message format is invalid!"
-  exit 1
-fi
-```
-
----
-
-## 🛠 Miscellaneous
-
-- Set default branch to `main`:
-```bash
-git config --global init.defaultBranch main
-```
-
-- Checkout existing branch:
-```bash
-git checkout br1
-```
-
----
-
-## 📂 Sample Repositories Cloned Using SSH
-
-```bash
-git clone git@github.com-account1:shariful-w3/microservices-config.git
-git clone git@gitlab.com-account2:shaarifulz/portableportal.git
-```
----
-### 🔗 Set Remote Repository Using SSH Config
-
-Step 3: Add or update remote repo using your SSH configurations:
-```bash
-git remote set-url origin git@github.com-account1:shariful-w3/DevOps1Jenkins.git
-```
-
----
-
-## 📌 Notes
-
-- Always check `.ssh/config` if clone fails.
-- Avoid `System.out.println` in production code.
-- Use hooks to enforce standards.
-- Prefer SSH for secure and multi-account Git access.
-
----
-
-## 🔧 Additional Useful Commands
-
-### ✅ Install Java (OpenJDK 17)
-To install Java on a Debian/Ubuntu-based system:
-```bash
-sudo apt update
-sudo apt install openjdk-17-jdk
-```
-
-### 🚀 Running a Spring Boot Application with External Configuration
-```bash
-java -jar cismiddleware-0.0.1-SNAPSHOT.jar --spring.config.location=file:/root/cis-backend/executables/conf/
-```
-
-### 🔐 SSL Certificate Management with Let's Encrypt and PKCS12
-Navigate to your certificate directory:
-```bash
-cd /etc/letsencrypt/live/example.com/
-```
-
-Backup the existing `.p12` certificate:
-```bash
-mv springboot.p12 springboot.p12_old
-```
-
-Generate a new PKCS#12 (.p12) file from PEM certificates:
-```bash
-openssl pkcs12 -export -in fullchain.pem -inkey privkey.pem -out springboot.p12 -name springboot -CAfile chain.pem -caname root
-```
+✨ Your MySQL backups now walk with discipline, reporting success or failure as faithfully as a town crier.
